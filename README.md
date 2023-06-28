@@ -18,7 +18,8 @@ However, this means that for each time period, we must go back to the original c
 Recording rules are the solution to problematically slow queries.
 
 Such recording rules will require aggregation.
-The way PromQL handles counter resets means that `rate()` must always be used _before_ aggregation.
+The way PromQL [handles counter resets](https://github.com/prometheus/prometheus/blob/e1115ae58d069b3f7fd19ffc6b635a6c98882148/promql/functions.go#L99)
+means that `rate()` must always be used _before_ aggregation.
 Therefore, to calculate SLIs, we must convert from counters to rates.
 
 Can we use such a rate to later calculate the SLI over different time periods?
