@@ -8,24 +8,36 @@ In other words, can one get the equivalent of `increase(some_metric[1d])` by usi
 
 ## Why?
 
-The way PromQL handles counter resets means that `rate()` must always be used _before_ aggregation.
-When computing high-level metrics like service-level indicators (SLIs), aggregation is necessary.
-
 It's common to evaluate SLIs over different time periods (e.g. alert based on last 10m, but report a 30d average to management).
 We can of course use multiple recording rules to account for different time periods, like:
 
-    rate(some_metric[10m])
-    rate(some_metric[30d])
+    sum(rate(some_metric[10m]))
+    sum(rate(some_metric[30d]))
 
 However, this means that for each time period, we must go back to the original counter metrics, which may be quite slow and expensive to query.
 Recording rules are the solution to problematically slow queries.
-But can we use them in this scenario?
+
+Such recording rules will require aggregation.
+The way PromQL handles counter resets means that `rate()` must always be used _before_ aggregation.
+Therefore, to calculate SLIs, we must convert from counters to rates.
+
+Can we use such a rate to later calculate the SLI over different time periods?
+
+The inspiration for this question comes from exploring the [OpenSLO](https://github.com/OpenSLO/OpenSLO) specification
+which asks users to define a _single_ query as their SLI and separately define evaluation time windows (potentially multiple) in a different YAML object.
+
+Since an SLI generally requires aggregation, users must supply a rate.
+We can evaluate and store that rate.
+But can we extrapolate that to calculate the actual count of observations over arbitrary time periods as the OpenSLO specification seems to expect?
 
 ## Answer
 
 Based on the experiment below, it appears this is not possible.
+Results are generally not accurate.
+
 While results may be close in some situations,
-the duration used in the `rate()` recording rule and the nature of the underlying counter will affect how accurate it is.
+the duration used in the `rate()` recording rule and the nature of the underlying counter will affect how accurate it is,
+making it difficult to provide a concrete error margin.
 
 ## Explanation
 
@@ -33,7 +45,7 @@ To test this, I created some artificial time series and loaded them into PromQL 
 
 ![image](./imgs/requests_total.png)
 
-The series `requests_total{host="sabsay.dev1"}` is a counter that increases at a constant rate of 120 per minute (2 per second).
+The series `requests_total{host="sabsay.dev1"}` is a counter that increases at a constant rate of 2 per second.
 The series `requests_total{host="sabsay.dev2"}` is a counter that increases at a constant rate of 2 per second for 50 samples and then increases at twice that rate for the next 50 samples.
 
 Here is what their rates look like:
