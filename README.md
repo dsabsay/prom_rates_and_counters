@@ -25,11 +25,15 @@ Therefore, to calculate SLIs, we must convert from counters to rates.
 Can we use such a rate to later calculate the SLI over different time periods?
 
 The inspiration for this question comes from exploring the [OpenSLO](https://github.com/OpenSLO/OpenSLO) specification
-which asks users to define a _single_ query as their SLI and separately define evaluation time windows (potentially multiple) in a different YAML object.
+which asks users to define SLIs separately from time windows.
 
-Since an SLI generally requires aggregation, users must supply a rate.
+Since an SLI generally requires aggregation, it's natural (at least to me) to supply a rate as the SLI.
 We can evaluate and store that rate.
-But can we extrapolate that to calculate the actual count of observations over arbitrary time periods as the OpenSLO specification seems to expect?
+But can we extrapolate that to calculate the actual count of observations over arbitrary time periods?
+
+> **Update**: One way to resolve this is in the context of SLOs is to require that users supply raw counters as the SLI.
+> Then we can apply rate()/increase() and aggregation after the fact, with whatever time windows we need.
+> This is what [google/slo-generator](https://github.com/google/slo-generator/blob/master/docs/providers/prometheus.md#good--bad-ratio) does for prometheus.
 
 ## Answer
 
